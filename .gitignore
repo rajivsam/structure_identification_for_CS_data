@@ -18,6 +18,10 @@ dist/
 *.egg-info/
 .eggs/
 
+# Generated outputs
+reports/*.md
+reports/*.html
+
 # Test and coverage outputs
 .pytest_cache/
 .coverage
