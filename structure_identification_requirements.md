@@ -7,10 +7,19 @@ Status: Proposed specification
 
 The purpose of the structure_id package is to identify and describe the internal architecture of a cross-sectional dataset by separating:
 
-- Explicit structures: observable patterns in the raw feature space, including redundant feature blocks and dense macro-clusters of observations.
+- Explicit structures: observable patterns in the prepared feature space, including redundant feature blocks and dense macro-clusters of observations.
 - Latent structures: hidden instability in the predictive relationship, revealed through model residual behavior and structural-break detection.
 
 The package shall support data analysts and machine learning practitioners in understanding where a dataset appears to be composed of distinct sub-populations and where a global predictive model is likely to break down.
+
+The package shall be treated primarily as a descriptive structure-discovery tool. Its core purpose is to identify the descriptive structure in a dataset and to support model-development work by helping analysts understand the architecture of the data before finalizing a global modeling strategy. This is a sophisticated and highly relevant use case for applied machine-learning workflows.
+
+The package shall also support comparison workflows in which different segments of a dataset, or different instances of a dataset, are compared to assess whether they are structurally similar. This capability is useful in two principal settings:
+
+1. At model-development time, to determine whether the development environment is drifting.
+2. At operational time, to determine whether drift has occurred.
+
+In both cases, rigorous statistical testing for feature drift shall be the recommended formal verification method. Structure assessment on potentially drifting datasets shall therefore be treated primarily as a diagnostic and verification modality, not as a replacement for formal drift testing. The discovery dataset — typically the training partition or the primary analysis dataset — is the dataset on which the structure is learned and described. Held-out partitions are then used as a structural stability check, and the package shall report descriptive differences in cluster distributions, noise rates, and residual structure so the analyst can inspect potential shifts without imposing a hard pass/fail rule.
 
 The package is intended for cross-sectional data only and is not designed for time-series, longitudinal, panel, or repeated-measures datasets.
 
@@ -20,9 +29,9 @@ The package is intended for cross-sectional data only and is not designed for ti
 
 The package shall support:
 
-- dataset ingestion from tabular data
+- dataset ingestion from tabular data that has already passed cleaning and numeric featurization
 - target and task validation
-- explicit feature redundancy filtering
+- explicit feature redundancy filtering on preprocessed numeric features
 - explicit row clustering / macro-population discovery
 - latent structural-break detection using residual-based fluctuation tests
 - output generation for analysts and downstream modeling workflows
@@ -31,10 +40,22 @@ The package shall support:
 
 The package shall not support:
 
+- dataset downloading, source verification, or raw ingestion from external repositories
+- parser-specific or schema-specific cleaning logic for messy source files
 - longitudinal or temporal modeling assumptions
 - within-unit tracking or repeated measurements
 - explicit forecasting or time ordering
 - automatically fitting model ensembles for all possible partition variable combinations without a valid structural baseline
+
+### 2.3 Upstream Data Pipeline Assumption
+
+This package is intentionally scoped to the structure-discovery layer. It assumes the upstream data pipeline has already performed the following steps:
+
+1. dataset acquisition and verification via the KMDS dataset utility stack, such as https://github.com/rajivsam/kmds-dataset-util
+2. parsing and cleaning via explicit cleaning workflows, such as https://github.com/rajivsam/dd-parser-cleaner
+3. numeric representation and featurization via explicit numeric-features workflows, such as https://github.com/rajivsam/featurization
+
+Under this assumption, the structure_id package consumes a tabular dataset in which columns are already cleaned, typed, and in a numeric form suitable for redundancy analysis and downstream modeling. This package does not re-implement cleaning, source verification, or feature engineering workflows.
 
 ## 3. Definitions
 
@@ -43,7 +64,8 @@ The package shall not support:
 A dataset D is a tabular, row-wise data structure where:
 - each row represents one observation
 - each column represents one variable or feature
-- variables may be numeric, categorical, or mixed
+- variables are assumed to have already passed upstream cleaning and numeric representation steps
+- the structure_id package operates over a numerically usable representation and does not redefine raw source cleaning or parser logic
 
 ### 3.2 Target
 
@@ -112,8 +134,13 @@ The package shall accept the following required and optional inputs.
 
 The following parameters shall be supported with default values:
 
+- mutual_information_threshold: default 0.85
+  - primary redundancy tolerance for feature block detection in the normalized mutual-information (NMI) formulation
+  - the canonical threshold used when the package is operating on preprocessed numeric features
+
 - correlation_threshold: default 0.85
-  - used to define redundancy tolerance in feature block detection
+  - legacy compatibility alias retained for existing calling code and notebooks
+  - if provided without mutual_information_threshold, it shall be treated as equivalent to the MI threshold for backward compatibility
 
 - min_cluster_size: default 15
   - minimum cluster size for explicit row clustering
@@ -134,6 +161,8 @@ Additional filtering thresholds shall be supported:
 
 - max_class_concentration: default 0.98
   - maximum proportion allowed for the dominant category before exclusion
+
+The package assumes that cleaning and upstream numeric encodings have already been completed. Therefore, the redundancy stage shall primarily operate on already-tabular numeric columns; categorical handling is supported only for compatibility with mixed datasets and for downstream row-clustering encodings, not as a substitute for upstream normalization or cleaning.
 
 ### 4.4 Input Validation Rules
 
@@ -179,20 +208,23 @@ The package shall drop any categorical column where:
 For each candidate column:
 - if missingness exceeds max_missing_ratio, the variable shall be rejected
 - if missingness is below the threshold:
-  - categorical missing values shall be recoded as a named category "__MISSING__"
-  - numerical missing values shall be median-imputed or isolated as an auxiliary discrete block depending on the selected processing strategy
+  - the package shall assume upstream cleaning has already converted raw missingness to a valid representation
+  - categorical missing values may be recoded as a named category "__MISSING__" only as a compatibility fallback for mixed-source input
+  - numerical missing values may be median-imputed only as a local preprocessing convenience within the structure pipeline
+
+This requirement is intentionally compatible with upstream pipelines such as the KMDS dataset utility, dd-parser-cleaner, and the numeric featurization workflows, which are expected to perform the authoritative source cleaning and representation logic before structure discovery begins.
 
 ### 5.1.4 Type Mapping
 
 Each surviving variable shall be assigned to one of two processing paths:
 
 - Continuous path:
-  - float and integer columns
-  - used in continuous ordering-based structural tests
+  - float and integer columns in the numeric representation
+  - used in continuous ordering-based structural tests and in the explicit feature redundancy analysis
 
 - Categorical path:
-  - string, object, boolean, and low-cardinality integer-like labels
-  - used in categorical or group-based distribution tests
+  - string, object, boolean, and low-cardinality integer-like labels used as compatibility paths for mixed input data
+  - used in categorical or group-based distribution tests after the upstream dataset has already been normalized
 
 ### 5.1.5 Provisional Candidate Count
 
@@ -224,9 +256,11 @@ The user shall provide the row-selection logic for each partition, and the packa
 The package shall support the common workflow in which:
 - the training partition is used to fit the model and derive feature mappings,
 - the validation partition is used to tune model parameters and compare alternative configurations,
-- the test partition is reserved for final performance evaluation.
+- the test partition is reserved for final performance evaluation and for structural-stability checks.
 
 The system shall enforce a leakage-prevention rule such that the model learned on the training partition is not refit using information from the validation or test partitions when applying the learned feature transformations.
+
+For structure discovery, the primary discovery dataset shall remain the training or analysis dataset. The validation and test partitions shall not be used to redefine the learned structure; instead, they shall be evaluated for structural preservation using the training-derived feature mappings and learned structure logic. The package shall record the degree of structural agreement or disagreement in the diagnostics and report it as a drift or stability assessment.
 
 #### Feature Application Methods
 
@@ -254,28 +288,30 @@ The attributes passed to this method shall be explicitly validated, and any miss
 
 ## 5.2 Stage 1: Explicit Column Structure Identification and Filtering
 
-The package shall identify redundant feature blocks in the feature space.
+The package shall identify redundant feature blocks in the feature space after the upstream cleaning and numeric-featurization steps have already been executed.
 
 ### 5.2.1 Leakage Prevention
 
 The target variable Y and structural regressors X shall be excluded from all candidate partitioning analysis.
 
-### 5.2.2 Pairwise Rank Correlation Mapping
+### 5.2.2 Pairwise Redundancy Mapping
 
-For all remaining continuous attributes:
-- compute a pairwise Spearman rank correlation matrix
-- convert it to a rank-distance matrix
+For all remaining continuous attributes in the already-preprocessed numeric representation:
+- compute a pairwise normalized mutual-information (NMI) matrix
+- convert it to a redundancy-distance matrix
 - define distance as:
-  D = 1 - |rho|
+  D = 1 - NMI
+
+This package shall treat mutual information as the canonical redundancy metric, because the upstream numerical featurization step is expected to have converted raw features into a stable numeric form before structure discovery. The redundancy analysis shall therefore operate on numeric columns rather than on raw parser output or mixed-source objects.
 
 ### 5.2.3 Hierarchical Clustering
 
 The system shall apply hierarchical complete-linkage clustering to the distance matrix.
 
 A cluster shall be cut at:
-- height = 1 - correlation_threshold
+- height = 1 - mutual_information_threshold
 
-This shall produce groups of redundant variables.
+For backward compatibility, an alias named correlation_threshold may be provided and interpreted as the equivalent redundancy threshold for the MI formulation. This shall produce groups of redundant variables.
 
 ### 5.2.4 Representative Feature Selection
 
@@ -361,6 +397,19 @@ This profiling layer shall include:
 
 The training cluster profile shall be computed from the feature matrix after feature reduction and `structure_id` assignment, and shall be used for analyst interpretation, not for refitting the model on validation or test partitions.
 
+### 5.3.7 Structural Stability Check on Held-Out Data
+
+The package shall support a held-out structure-preservation assessment in which the learned discovery structure is evaluated on validation or test partitions without re-estimating the structural model from the held-out rows.
+
+This requirement shall be satisfied by:
+
+- applying the training-derived feature representation to validation/test partitions
+- using the frozen training-based structure logic to assign `structure_id` values on held-out rows when applicable
+- comparing the resulting explicit structures and latent-break findings against the training-discovery results
+- reporting descriptive differences in cluster distributions, noise rates, and residual structure so the analyst can inspect potential shifts without imposing an arbitrary pass/fail threshold
+
+The held-out analysis shall therefore be treated as a comparative diagnostic. It shall record differences in discovered structure across partitions and flag them for analyst review when there may be a shift in the underlying operating population or data-generation process.
+
 ## 5.4 Stage 3: Latent Structure Detection via Residual-Based Heterogeneity Testing
 
 The package shall detect where the underlying predictive relationship changes.
@@ -433,8 +482,8 @@ For each detected redundant feature block:
 - similarity threshold
 - number of features in cluster
 - merge history of the clustered pairs
-- pairwise Spearman correlations used to define redundancy
-- full correlation matrix for the cluster members
+- pairwise normalized mutual-information (NMI) values used to define redundancy
+- full redundancy matrix for the cluster members
 
 ### 6.2 Explicit Row Structures
 
@@ -555,12 +604,13 @@ The requirement shall be considered satisfied when all of the following are true
 2. It rejects invalid or empty inputs with clear errors.
 3. It excludes Y and X from candidate partitioning.
 4. It filters out constant, near-constant, degenerate, and overly missing columns.
-5. It identifies redundant feature blocks using Spearman-distance clustering.
+5. It identifies redundant feature blocks using normalized mutual information on the already-preprocessed numeric representation.
 6. It detects macro-clusters in row space using a density-based method.
 7. It fits a valid baseline model and extracts residuals.
 8. It scans candidate variables for latent instability.
 9. It applies a multiple-testing correction.
 10. It produces an output containing explicit and latent structures with analyst-readable summaries.
+11. The implementation assumptions are consistent with the upstream KMDS data pipeline: source cleaning, dataset verification, and numeric featurization are treated as upstream responsibilities and not duplicated inside structure_id.
 
 ## 10. Recommended Minimal API Shape
 
@@ -573,6 +623,7 @@ result = structure_id(
     task_type="regression",
     structural_covariates=["X1", "X2"],
     config={
+        "mutual_information_threshold": 0.85,
         "correlation_threshold": 0.85,
         "min_cluster_size": 15,
         "alpha": 0.05,
@@ -605,6 +656,8 @@ The result should be a structured object with:
 This specification defines the package as a cross-sectional structure-discovery framework that:
 - separates explicit and latent architecture,
 - protects against invalid candidate variables,
-- identifies redundant columns and dense macro-populations,
+- identifies redundant columns and dense macro-populations in a numerically preprocessed dataset,
 - tests for residual-based structural breaks,
 - and reports the final outputs in a structured and analyst-friendly form.
+
+The package explicitly assumes that cleaning, dataset verification, and numeric featurization are handled upstream by the KMDS workflow stack, including the dataset utility, parser-cleaner, and featurization repositories. The structure_id package therefore provides the downstream discovery logic rather than re-implementing data-source preparation.

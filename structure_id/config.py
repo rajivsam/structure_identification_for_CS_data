@@ -11,6 +11,13 @@ class StructureIDConfig:
     max_missing_ratio: float = 0.20
     max_categories: int = 30
     max_class_concentration: float = 0.98
+    mutual_information_threshold: float | None = None
+
+    def __post_init__(self) -> None:
+        if self.mutual_information_threshold is None:
+            self.mutual_information_threshold = self.correlation_threshold
+        else:
+            self.correlation_threshold = self.mutual_information_threshold
 
     @classmethod
     def from_dict(cls, config: dict[str, Any] | None = None) -> "StructureIDConfig":
@@ -21,6 +28,7 @@ class StructureIDConfig:
     def to_dict(self) -> dict[str, Any]:
         return {
             "correlation_threshold": self.correlation_threshold,
+            "mutual_information_threshold": self.mutual_information_threshold,
             "min_cluster_size": self.min_cluster_size,
             "alpha": self.alpha,
             "std_threshold": self.std_threshold,

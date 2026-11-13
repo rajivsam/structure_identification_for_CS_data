@@ -3,7 +3,7 @@
 ## Project goal
 This repository implements a Python package, `structure_id`, for identifying explicit and latent structure in cross-sectional datasets. The package is focused on:
 
-- redundant feature-block detection using Spearman correlation and complete-linkage clustering
+- redundant feature-block detection using normalized mutual information and complete-linkage clustering on preprocessed numeric features
 - row-level macro-cluster discovery using HDBSCAN
 - latent structural-break detection from residual-based heterogeneity tests
 - partition-aware train/validation/test workflows with leakage-safe feature application
@@ -33,8 +33,8 @@ This project has already implemented the following requirements and behavior:
 - duplicate partition-column validation (`dataset_partition` / `dataset_split`)
 - feature application methods for training/validation/test partitions
 - selection of featurized attributes by explicit list
-- redundant feature detection using Spearman distance and complete-linkage clustering
-- cluster member metadata including merge history and pairwise correlations
+- redundant feature detection using normalized mutual-information distance and complete-linkage clustering
+- cluster member metadata including merge history and pairwise mutual-information scores
 - instance-level `structure_id` assignment with noise handling (`"noise"`)
 - training cluster profile generation with a basic/interpretive summary
 - markdown and HTML export for the training cluster profile
@@ -45,6 +45,7 @@ This project has already implemented the following requirements and behavior:
 - Package is installed in editable/uv-friendly form via `pyproject.toml`
 - Tests are focused and run with pytest
 - The notebook uses the project root to resolve the dataset, even when executed from the `notebooks/` directory
+- Feature redundancy is computed on already-preprocessed numeric representations; cleaning/featurization is assumed to be handled upstream by the dataset utility and featurization workflows referenced in the project notes
 
 ## How to run validation
 From the repo root:

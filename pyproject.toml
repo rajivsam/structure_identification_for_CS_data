@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "structure-id"
 version = "0.1.0"
-description = "Structure identification for cross-sectional datasets"
+description = "Descriptive structure discovery and drift diagnostics for cross-sectional datasets"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

@@ -16,13 +16,20 @@ class ExplicitColumnBlock:
     cluster_id: int
     representative_feature: str
     dropped_features: list[str]
-    method: str = "spearman_complete_linkage"
+    method: str = "mutual_information_complete_linkage"
     similarity_threshold: float = 0.85
     feature_count: int = 0
     cluster_members: list[str] = field(default_factory=list)
     pairwise_correlations: dict[str, float] = field(default_factory=dict)
+    pairwise_mutual_information: dict[str, float] = field(default_factory=dict)
     merge_history: list[dict[str, Any]] = field(default_factory=list)
     correlation_matrix: dict[str, dict[str, float]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.pairwise_mutual_information and self.pairwise_correlations:
+            self.pairwise_mutual_information = self.pairwise_correlations
+        if not self.pairwise_correlations and self.pairwise_mutual_information:
+            self.pairwise_correlations = self.pairwise_mutual_information
 
     def describe(self) -> str:
         if not self.cluster_members:
@@ -34,8 +41,8 @@ class ExplicitColumnBlock:
         pair_snippets = []
         for item in self.merge_history[:5]:
             left, right = item["merged_pair"]
-            rho = float(item["spearman_rho"])
-            pair_snippets.append(f"{left}↔{right} (rho={rho:.4f})")
+            mi_value = item.get("mutual_information", item.get("normalized_mutual_information", item.get("spearman_rho", 0.0)))
+            pair_snippets.append(f"{left}↔{right} (mi={float(mi_value):.4f})")
         if not pair_snippets:
             pair_snippets.append("no explicit pairwise merge recorded")
 
@@ -133,6 +140,7 @@ class StructureResult:
                     "similarity_threshold": block.similarity_threshold,
                     "feature_count": block.feature_count,
                     "pairwise_correlations": block.pairwise_correlations,
+                    "pairwise_mutual_information": block.pairwise_mutual_information,
                     "merge_history": block.merge_history,
                     "correlation_matrix": block.correlation_matrix,
                 }

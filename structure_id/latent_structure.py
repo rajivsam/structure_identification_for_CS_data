@@ -30,8 +30,8 @@ class LatentStructureDetector:
         if not model_columns:
             y = data[target].astype(float)
             if task_type == "regression":
-                return lambda: y.mean(), y
-            return lambda: np.full(len(y), y.value_counts(normalize=True).idxmax()), y
+                return lambda frame: y.mean(), y
+            return lambda frame: np.full(len(y), y.value_counts(normalize=True).idxmax()), y
 
         X = data[model_columns].copy()
         y = data[target].astype(float)

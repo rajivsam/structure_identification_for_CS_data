@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import squareform
+from sklearn.metrics import mutual_info_score
 from sklearn.preprocessing import StandardScaler
 
 from .config import StructureIDConfig
@@ -14,6 +15,42 @@ from .types import ExplicitColumnBlock, ExplicitRowCluster
 class ExplicitStructureDetector:
     def __init__(self, config: StructureIDConfig):
         self.config = config
+
+    @staticmethod
+    def _normalized_mutual_information(x: pd.Series, y: pd.Series) -> float:
+        x_numeric = pd.to_numeric(x, errors="coerce").fillna(x.median())
+        y_numeric = pd.to_numeric(y, errors="coerce").fillna(y.median())
+
+        if x_numeric.empty or y_numeric.empty:
+            return 0.0
+
+        n_bins = max(2, min(len(x_numeric), 10))
+        x_binned = pd.cut(x_numeric, bins=n_bins, duplicates="drop", include_lowest=True)
+        y_binned = pd.cut(y_numeric, bins=n_bins, duplicates="drop", include_lowest=True)
+
+        x_labels = x_binned.astype(str)
+        y_labels = y_binned.astype(str)
+
+        mi = mutual_info_score(x_labels, y_labels)
+        if not np.isfinite(mi):
+            return 0.0
+
+        upper_bound = np.log(len(x_numeric))
+        if upper_bound <= 0.0:
+            return 0.0
+        return float(np.clip(mi / upper_bound, 0.0, 1.0))
+
+    def _mutual_information_matrix(self, data: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+        matrix = pd.DataFrame(0.0, index=columns, columns=columns)
+        for left_index, left_name in enumerate(columns):
+            for right_index in range(left_index + 1, len(columns)):
+                right_name = columns[right_index]
+                strength = self._normalized_mutual_information(data[left_name], data[right_name])
+                matrix.at[left_name, right_name] = strength
+                matrix.at[right_name, left_name] = strength
+        for column in columns:
+            matrix.at[column, column] = 1.0
+        return matrix
 
     def detect_column_blocks(self, data: pd.DataFrame, candidate_columns: list[str]) -> tuple[list[ExplicitColumnBlock], list[str]]:
         if not candidate_columns:
@@ -25,13 +62,14 @@ class ExplicitStructureDetector:
         if len(continuous_columns) <= 1:
             return [], list(candidate_columns)
 
-        corr = data[continuous_columns].corr(method="spearman")
-        distance = 1.0 - np.abs(corr.to_numpy())
+        similarity = self._mutual_information_matrix(data, continuous_columns)
+        distance = 1.0 - similarity.to_numpy()
         np.fill_diagonal(distance, 0.0)
         condensed = squareform(distance, checks=False)
 
         linkage_matrix = linkage(condensed, method="complete")
-        labels = fcluster(linkage_matrix, t=1.0 - self.config.correlation_threshold, criterion="distance")
+        threshold = self.config.mutual_information_threshold or self.config.correlation_threshold
+        labels = fcluster(linkage_matrix, t=1.0 - threshold, criterion="distance")
 
         groups: dict[int, list[str]] = {}
         for column, label in zip(continuous_columns, labels):
@@ -44,25 +82,25 @@ class ExplicitStructureDetector:
                 surviving.add(members[0])
                 continue
 
-            cluster_corr = corr.loc[members, members].copy()
-            pairwise_correlations: dict[str, float] = {}
+            cluster_similarity = similarity.loc[members, members].copy()
+            pairwise_mutual_information: dict[str, float] = {}
             merge_history: list[dict[str, float | list[str] | str]] = []
             for left_index, left_name in enumerate(members):
                 for right_index in range(left_index + 1, len(members)):
                     right_name = members[right_index]
-                    rho = float(cluster_corr.loc[left_name, right_name])
+                    mutual_information = float(cluster_similarity.loc[left_name, right_name])
                     pair_name = f"{left_name}__{right_name}"
-                    pairwise_correlations[pair_name] = rho
+                    pairwise_mutual_information[pair_name] = mutual_information
                     merge_history.append(
                         {
                             "merged_pair": [left_name, right_name],
-                            "spearman_rho": rho,
-                            "absolute_spearman_rho": abs(rho),
-                            "distance": 1.0 - abs(rho),
+                            "mutual_information": mutual_information,
+                            "normalized_mutual_information": mutual_information,
+                            "distance": 1.0 - mutual_information,
                         }
                     )
 
-            merge_history.sort(key=lambda item: abs(float(item["spearman_rho"])), reverse=True)
+            merge_history.sort(key=lambda item: float(item["mutual_information"]), reverse=True)
             variance = data[members].var(ddof=0).to_dict()
             representative = max(members, key=lambda col: float(variance.get(col, 0.0)))
             dropped = [col for col in members if col != representative]
@@ -71,14 +109,15 @@ class ExplicitStructureDetector:
                     cluster_id=cluster_id,
                     representative_feature=representative,
                     dropped_features=dropped,
-                    similarity_threshold=self.config.correlation_threshold,
+                    similarity_threshold=threshold,
                     feature_count=len(members),
                     cluster_members=members,
-                    pairwise_correlations=pairwise_correlations,
+                    pairwise_correlations=pairwise_mutual_information,
+                    pairwise_mutual_information=pairwise_mutual_information,
                     merge_history=merge_history,
                     correlation_matrix={
                         row: {col: float(value) for col, value in values.items()}
-                        for row, values in cluster_corr.to_dict().items()
+                        for row, values in cluster_similarity.to_dict().items()
                     },
                 )
             )

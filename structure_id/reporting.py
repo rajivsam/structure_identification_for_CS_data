@@ -281,9 +281,11 @@ def generate_report(result: StructureResult) -> str:
             if block.merge_history:
                 for item in block.merge_history[:3]:
                     left, right = item["merged_pair"]
-                    rho = float(item["spearman_rho"])
+                    mutual_information = float(
+                        item.get("mutual_information", item.get("normalized_mutual_information", item.get("spearman_rho", 0.0)))
+                    )
                     lines.append(
-                        f"    pair={left}↔{right}, rho={rho:.4f}, distance={1.0 - abs(rho):.4f}"
+                        f"    pair={left}↔{right}, mi={mutual_information:.4f}, distance={1.0 - mutual_information:.4f}"
                     )
 
     lines.extend(["", "Explicit row clusters:"])
