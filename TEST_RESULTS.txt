@@ -1,0 +1,51 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0 -- /home/rajiv/programming/structure_identification_for_CS_data/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/rajiv/programming/structure_identification_for_CS_data
+configfile: pyproject.toml
+plugins: platformdirs-4.14.5, anyio-4.16.0
+collecting ... collected 31 items
+
+tests/test_structure_id_v2.py::test_stage0_empty_data PASSED             [  3%]
+tests/test_structure_id_v2.py::test_stage0_missing_target PASSED         [  6%]
+tests/test_structure_id_v2.py::test_stage0_invalid_task_type PASSED      [  9%]
+tests/test_structure_id_v2.py::test_stage0_validates_structural_covariates PASSED [ 12%]
+tests/test_structure_id_v2.py::test_stage0_target_excluded_from_candidates PASSED [ 16%]
+tests/test_structure_id_v2.py::test_stage1_redundancy_collapse_basic PASSED [ 19%]
+tests/test_structure_id_v2.py::test_stage1_representative_selection PASSED [ 22%]
+tests/test_structure_id_v2.py::test_stage2_orthogonalization_exists PASSED [ 25%]
+tests/test_structure_id_v2.py::test_stage2_orthogonality PASSED          [ 29%]
+tests/test_structure_id_v2.py::test_stage2_interpretation_report PASSED  [ 32%]
+tests/test_structure_id_v2.py::test_stage2_component_contributions PASSED [ 35%]
+tests/test_structure_id_v2.py::test_stage3_row_clustering_creates_structure_id PASSED [ 38%]
+tests/test_structure_id_v2.py::test_stage3_independent_label_string PASSED [ 41%]
+tests/test_structure_id_v2.py::test_stage3_cluster_profiles PASSED       [ 45%]
+tests/test_structure_id_v2.py::test_stage3_row_counts_match PASSED       [ 48%]
+tests/test_structure_id_v2.py::test_stage4_latent_structure_output PASSED [ 51%]
+tests/test_structure_id_v2.py::test_stage4_latent_break_optional PASSED  [ 54%]
+tests/test_structure_id_v2.py::test_result_variance_ledger PASSED        [ 58%]
+tests/test_structure_id_v2.py::test_result_representative_features_included PASSED [ 61%]
+tests/test_structure_id_v2.py::test_result_orthogonal_basis_dimensions PASSED [ 64%]
+tests/test_structure_id_v2.py::test_consistency_same_columns_selected PASSED [ 67%]
+tests/test_structure_id_v2.py::test_consistency_orthogonal_dimension PASSED [ 70%]
+tests/test_structure_id_v2.py::test_consistency_clustering_pattern PASSED [ 74%]
+tests/test_structure_id_v2.py::test_compare_structures_works PASSED      [ 77%]
+tests/test_structure_id_v2.py::test_acceptance_orthogonal_near_zero_correlation PASSED [ 80%]
+tests/test_structure_id_v2.py::test_acceptance_weight_reconstruction PASSED [ 83%]
+tests/test_structure_id_v2.py::test_acceptance_no_wide_dataset_error PASSED [ 87%]
+tests/test_structure_id_v2.py::test_acceptance_reporting_methods_work PASSED [ 90%]
+tests/test_structure_id_v2.py::test_single_feature_dataset PASSED        [ 93%]
+tests/test_structure_id_v2.py::test_all_constant_features_rejected PASSED [ 96%]
+tests/test_structure_id_v2.py::test_missing_values_handled PASSED        [100%]
+
+=============================== warnings summary ===============================
+tests/test_structure_id_v2.py::test_missing_values_handled
+  /home/rajiv/programming/structure_identification_for_CS_data/structure_id/validation.py:119: UserWarning: Imputed feat1 with median: -0.15065362952602881
+    warnings.warn(f"Imputed {col} with median: {median_val}")
+
+tests/test_structure_id_v2.py::test_missing_values_handled
+  /home/rajiv/programming/structure_identification_for_CS_data/structure_id/validation.py:119: UserWarning: Imputed feat2 with median: 0.12668823551658456
+    warnings.warn(f"Imputed {col} with median: {median_val}")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 31 passed, 2 warnings in 64.29s (0:01:04) ===================
