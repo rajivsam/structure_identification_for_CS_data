@@ -18,6 +18,7 @@ The package focuses on two complementary forms of structure:
 
 **This package is designed as a descriptive analytical tool** for understanding and characterizing internal structure in datasets. It is intended to support decision-making about data and models, not to replace formal statistical testing or serve as a hard gate in automated workflows.
 
+
 ### Use Cases
 
 **1. Understanding Sub-Populations in Discovery Data**
