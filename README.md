@@ -1,70 +1,69 @@
 # structure_id
 
-`structure_id` is a Python package for identifying the descriptive structure in a cross-sectional dataset. This is the primary intent of the package. It is useful during model development to understand the structure present in the data before committing to a single global model or downstream workflow. This is a sophisticated use case for applied analytics and model development.
+`structure_id` is a Python package for identifying and characterizing the descriptive structure of a cross-sectional dataset. It is designed for model-development and monitoring workflows where the goal is to understand how the data is organized before committing to a single global model or downstream analytical strategy.
 
-The package can also be used to compare different segments of the same dataset, or different instances of the dataset, to determine whether they are structurally similar. This can be done at:
+The package can also be used to compare different segments of the same dataset—or different instances of the same data-generating process—to determine whether they are structurally similar. This is useful both:
 
-1. model development time to check whether development is being performed in a drifting environment
-2. operational time to see whether drift has occurred
+1. during model development, to assess whether development is occurring in a drifting environment
+2. in operational settings, to detect whether drift has emerged over time
 
-Both of these cases can be checked using rigorous statistical testing for feature drift. This is the suggested approach for verifying feature drift. Structure assessment on potentially drifting datasets is primarily a diagnostic and verification modality rather than a replacement for formal drift testing.
+Formal statistical testing remains the recommended mechanism for verifying feature drift. Structure assessment is best understood as a diagnostic and interpretive layer: it helps analysts understand the data’s organization and instability, rather than replace formal drift testing.
 
 The package focuses on two complementary forms of structure:
 
-- Explicit structure: redundant feature blocks, dense row clusters, and macro-populations that are directly visible in the feature space.
-- Latent structure: hidden instability in the predictive relationship that appears through residual-based structural-break detection.
+- Explicit structure: redundant feature blocks, dense row clusters, and macro-populations that are directly visible in the feature space
+- Latent structure: hidden instability in the predictive relationship that emerges through residual-based structural-break detection
 
 ## Intended Use & Application Context
 
-**This package is designed as a descriptive analytical tool** for understanding and characterizing internal structure in datasets. It is intended to support decision-making about data and models, not to replace formal statistical testing or serve as a hard gate in automated workflows.
+`structure_id` is designed as a descriptive analytical tool for understanding and characterizing the internal structure of a dataset. It is intended to support model-development and monitoring decisions by revealing how the data is organized, where redundancy or heterogeneity is concentrated, and whether important structural changes are emerging over time or across conditions.
 
+This package is not intended to replace formal statistical testing or to serve as a hard gate in automated model workflows. Instead, it provides a structured, analyst-facing view of the data to support interpretation, validation, and decision-making.
 
 ### Use Cases
 
 **1. Understanding Sub-Populations in Discovery Data**
-Use `structure_id` to gain a summary view of the populations and structures present in your dataset before modeling. This can inform critical modeling decisions, such as:
-- Identifying whether independent, identically distributed (i.i.d.) assumptions are violated
-- Recognizing whether separate treatment of distinct sub-populations is warranted
-- Assessing whether a single global model is appropriate or whether stratified approaches are needed
+`structure_id` helps analysts summarize the populations and structures present in a dataset before committing to a single global modeling approach. It can reveal whether:
+- the data violates independent, identically distributed (i.i.d.) assumptions
+- distinct sub-populations warrant separate treatment
+- a single global model is appropriate or whether stratified modeling is preferable
 
 **2. Comparative Structure Assessment Across Time or Conditions**
-Compare dataset structures at different points in time or under different operational conditions to:
-- Understand the natural range of structural variation encountered with the same model
-- Assess whether operational structures remain within expected bounds (those for which the model meets performance SLAs)
-- Diagnose performance degradation by identifying structural shifts between high-performing and degraded periods
-- Validate that held-out test data reflects the same structural patterns as training data
+The package can compare dataset structures across time windows, operational conditions, or held-out cohorts to:
+- characterize the natural range of structural variation for a given model context
+- assess whether operational conditions remain within acceptable bounds for performance SLAs
+- diagnose performance degradation by identifying structural shifts between stable and degraded periods
+- verify that held-out data reflects the same structural patterns as the discovery dataset
 
-**3. Foundation for Feature Development & Hypothesis Testing**
-Use discovered structures as a foundation for targeted analysis:
-- Test specific hypotheses about the structures and populations identified
-- Reason about different feature directions and representations
-- Design validation experiments that account for structural heterogeneity
-- Explore alternative feature engineering approaches grounded in the discovered structure
+**3. Feature Development and Hypothesis Testing**
+Discovered structure provides a foundation for more targeted analysis and experimentation. It can be used to:
+- test hypotheses about the populations and structure identified in the data
+- reason about meaningful feature directions and representations
+- design validation studies that explicitly account for heterogeneity
+- explore alternative feature-engineering strategies grounded in the observed structure
 
 **4. Evolving Capability**
-This package provides a foundation that will evolve based on adoption and practical use:
-- Feedback from real-world applications will guide feature development
-- New capabilities will be added to address emerging use cases
-- The package should be viewed as a living tool that adapts to user needs
+`structure_id` is intended as a foundation for continued analytical capability. As the tool is applied in real-world settings, feedback from practitioners will inform its refinement and extension. It is best viewed as a living analytical tool that grows with practical use and domain feedback.
 
 ### Important Caveats
 
-- **Descriptive, Not Predictive:** Structure assessment is diagnostic in nature. It supports decision-making but is not framed as a strict automated gate.
-- **Complement to Formal Testing:** While structure analysis is useful for diagnostics and verification, it should complement—not replace—rigorous statistical testing for feature drift and performance monitoring.
-- **Qualitative Context Matters:** Use discovered structures in light of domain knowledge and business context. Structure patterns require analyst interpretation and validation.
+- **Descriptive, Not Predictive:** Structure analysis is diagnostic, not prescriptive. It informs interpretation and decision-making, but it is not designed to act as a hard automated gate.
+- **Variance-Accounting Perspective:** Prepared datasets often contain multiple sources of variance distortion—some direct, such as clustering and macro-population structure, and some indirect, such as feature correlation, redundancy, and latent heterogeneity. This tool is intended to expose those issues clearly so an analyst can recognize them once and carry that understanding forward across future datasets or related problem families without repeating the full diagnostic exercise.
+- **Complement to Formal Testing:** Structure assessment is valuable for diagnosis and verification, but it should complement—not replace—rigorous statistical testing for feature drift and performance monitoring.
+- **Qualitative Context Matters:** Discovered structure should be interpreted in light of domain knowledge and business context. The value of these patterns depends on analyst judgment, validation, and practical understanding.
 
 ## Enterprise use case
 
-In enterprise machine learning workflows, a dataset often appears to be well behaved at the aggregate level while still containing important internal heterogeneity. A single global model may look acceptable in overall performance metrics but fail systematically in one or more subgroups.
+In enterprise machine learning workflows, a dataset can appear well behaved at the aggregate level while still containing important internal heterogeneity. A single global model may look acceptable on overall metrics while failing systematically in one or more subgroups.
 
 `structure_id` provides a structured, analyst-friendly view of the dataset so teams can identify:
 
 - redundant or near-duplicate features that do not add incremental information
-- stable row clusters or macro-populations that may require separate treatment
+- stable row clusters or macro-populations that may warrant separate treatment
 - latent instability in the relationship between features and the target
 - whether held-out data exhibits the same structure as the discovery dataset
 
-The package is intended primarily for descriptive analytics and drift-oriented diagnostics. It is not framed as a strict predictive gate. Instead, it supports a disciplined assessment of whether the discovered structure is stable and whether apparent differences between training and test data are likely to reflect drift or other data changes.
+The package is intended primarily for descriptive analytics and drift-oriented diagnostics. It is not framed as a strict predictive gate. Instead, it supports a disciplined assessment of whether discovered structure is stable and whether apparent differences between training and evaluation data are likely to reflect drift or other data changes.
 
 ## Scope and positioning
 
@@ -76,7 +75,7 @@ This package does not replace the upstream KMDS pipeline responsibilities for:
 - raw parsing and cleaning
 - numeric featurization and preparation
 
-It is intentionally designed to consume prepared tabular data and operate on the structure-discovery layer.
+It is intentionally designed to consume prepared tabular data and operate at the structure-discovery layer, where the goal is to understand the organization of the data rather than to transform it.
 
 ## Upstream pipeline assumptions
 
