@@ -14,6 +14,44 @@ The package focuses on two complementary forms of structure:
 - Explicit structure: redundant feature blocks, dense row clusters, and macro-populations that are directly visible in the feature space.
 - Latent structure: hidden instability in the predictive relationship that appears through residual-based structural-break detection.
 
+## Intended Use & Application Context
+
+**This package is designed as a descriptive analytical tool** for understanding and characterizing internal structure in datasets. It is intended to support decision-making about data and models, not to replace formal statistical testing or serve as a hard gate in automated workflows.
+
+### Use Cases
+
+**1. Understanding Sub-Populations in Discovery Data**
+Use `structure_id` to gain a summary view of the populations and structures present in your dataset before modeling. This can inform critical modeling decisions, such as:
+- Identifying whether independent, identically distributed (i.i.d.) assumptions are violated
+- Recognizing whether separate treatment of distinct sub-populations is warranted
+- Assessing whether a single global model is appropriate or whether stratified approaches are needed
+
+**2. Comparative Structure Assessment Across Time or Conditions**
+Compare dataset structures at different points in time or under different operational conditions to:
+- Understand the natural range of structural variation encountered with the same model
+- Assess whether operational structures remain within expected bounds (those for which the model meets performance SLAs)
+- Diagnose performance degradation by identifying structural shifts between high-performing and degraded periods
+- Validate that held-out test data reflects the same structural patterns as training data
+
+**3. Foundation for Feature Development & Hypothesis Testing**
+Use discovered structures as a foundation for targeted analysis:
+- Test specific hypotheses about the structures and populations identified
+- Reason about different feature directions and representations
+- Design validation experiments that account for structural heterogeneity
+- Explore alternative feature engineering approaches grounded in the discovered structure
+
+**4. Evolving Capability**
+This package provides a foundation that will evolve based on adoption and practical use:
+- Feedback from real-world applications will guide feature development
+- New capabilities will be added to address emerging use cases
+- The package should be viewed as a living tool that adapts to user needs
+
+### Important Caveats
+
+- **Descriptive, Not Predictive:** Structure assessment is diagnostic in nature. It supports decision-making but is not framed as a strict automated gate.
+- **Complement to Formal Testing:** While structure analysis is useful for diagnostics and verification, it should complement—not replace—rigorous statistical testing for feature drift and performance monitoring.
+- **Qualitative Context Matters:** Use discovered structures in light of domain knowledge and business context. Structure patterns require analyst interpretation and validation.
+
 ## Enterprise use case
 
 In enterprise machine learning workflows, a dataset often appears to be well behaved at the aggregate level while still containing important internal heterogeneity. A single global model may look acceptable in overall performance metrics but fail systematically in one or more subgroups.
